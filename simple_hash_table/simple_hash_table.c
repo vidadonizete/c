@@ -11,15 +11,18 @@ hash_table *simple_hash_table_new(int capacity)
     return table;
 }
 
-int *simple_hash_table_put(char *key)
-{
-    
-}
-
-int *simple_hash_table_get(char *key)
+void simple_hash_table_free(hash_table **self)
 {
 }
 
-int *simple_hash_table_remove(char *key)
+int *simple_hash_table_put(hash_table *self, char *key, int data)
+{
+}
+
+int *simple_hash_table_get(hash_table *self, char *key)
+{
+}
+
+int *simple_hash_table_remove(hash_table *self, char *key)
 {
 }
