@@ -1,6 +1,3 @@
 project("linked list")
 
-add_executable(
-    linked_list
-    main.c
-)
+short_module(linked_list)

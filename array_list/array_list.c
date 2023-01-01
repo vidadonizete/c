@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "array_list.h"
+#include <array_list.h>
 
 #define GROW_FACTOR 2
 
@@ -21,17 +21,23 @@ static void array_list_grow(array_list *self)
     self->array = realloc(self->array, new_capacity * sizeof(int));
 }
 
-void array_list_push(array_list *self, int item)
+void array_list_push(array_list *self, int data)
 {
     if (self->length >= self->capacity)
     {
         array_list_grow(self);
     }
-    self->array[self->length++] = item;
+    self->array[self->length++] = data;
 }
 
 int array_list_pop(array_list *self)
 {
-    if (!self->length) return 0;
+    if (!self->length)
+        return 0;
     return self->array[--self->length];
+}
+
+int array_list_get(array_list *self, int index)
+{
+    return self->array[index];
 }
