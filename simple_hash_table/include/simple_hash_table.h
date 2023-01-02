@@ -19,9 +19,9 @@ typedef struct bucket
 
 typedef struct hash_table
 {
-    int buckets;
+    int capacity;
     int entries;
-    bucket *buckets_ptr;
+    bucket *buckets;
 } hash_table;
 
 hash_table *simple_hash_table_new(int capacity);

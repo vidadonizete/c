@@ -9,14 +9,43 @@
 hash_table *simple_hash_table_new(int capacity)
 {
     hash_table *table = malloc(sizeof(hash_table));
-    table->buckets = capacity;
+
+    table->capacity = capacity;
     table->entries = 0;
-    table->buckets_ptr = calloc(capacity, sizeof(bucket));
+    table->buckets = calloc(capacity, sizeof(bucket));
+
     return table;
+}
+
+static void simple_hash_table_free_entry(entry **entry)
+{
+    if (entry == NULL || *entry == NULL)
+    {
+        return;
+    }
+    free((*entry)->key);
+    free((*entry)->data);
+    free(*entry);
+
+    *entry = NULL;
 }
 
 void simple_hash_table_free(hash_table **self)
 {
+    for (int i = 0; i < (*self)->capacity; i++)
+    {
+        bucket *bucket = (*self)->buckets + i;
+        entry *entry = bucket->head;
+        while (entry)
+        {
+            struct entry *next = entry->next;
+            simple_hash_table_free_entry(&entry);
+            entry = next;
+        }
+    }
+    free((*self)->buckets);
+    free(*self);
+    *self = NULL;
 }
 
 // its a hash by division algorithm
@@ -31,6 +60,7 @@ static size_t simple_hash_table_hash_key(int buckets, char *key)
     {
         hash_digest ^= *(key + i) << (i % sizeof(size_t));
     }
+
     return hash_digest % buckets;
 }
 
@@ -107,6 +137,7 @@ static void simple_hash_table_insert_entry(bucket *bucket, entry *entry)
     }
     else
     {
+        assert(bucket->head);
         bucket->tail->next = entry;
         bucket->tail = entry;
     }
@@ -115,33 +146,25 @@ static void simple_hash_table_insert_entry(bucket *bucket, entry *entry)
 static entry *simple_hash_table_create_entry(char *key, int data)
 {
     entry *entry = malloc(sizeof(entry));
-    entry->key = calloc(strlen(key), sizeof(char));
-    strcpy(entry->key, key);
-    entry->data = malloc(sizeof(int));
-    *entry->data = data;
-    return entry;
-}
 
-static void simple_hash_table_delete_entry(entry **entry)
-{
-    if (*entry == NULL)
-    {
-        return;
-    }
-    free((*entry)->key);
-    free((*entry)->data);
-    free(*entry);
-    *entry = NULL;
+    entry->key = calloc(strlen(key), sizeof(char));
+    entry->data = malloc(sizeof(int));
+    entry->next = NULL;
+
+    strcpy(entry->key, key);
+    *entry->data = data;
+
+    return entry;
 }
 
 void simple_hash_table_put(hash_table *self, char *key, int data)
 {
-    size_t index = simple_hash_table_hash_key(self->buckets, key);
-    bucket *bucket = self->buckets_ptr + index;
+    size_t index = simple_hash_table_hash_key(self->capacity, key);
+    bucket *bucket = self->buckets + index;
 
     {
         entry *entry = simple_hash_table_remove_entry(bucket, key);
-        simple_hash_table_delete_entry(&entry);
+        simple_hash_table_free_entry(&entry);
     }
 
     {
@@ -152,8 +175,8 @@ void simple_hash_table_put(hash_table *self, char *key, int data)
 
 int *simple_hash_table_get(hash_table *self, char *key)
 {
-    size_t index = simple_hash_table_hash_key(self->buckets, key);
-    bucket *bucket = self->buckets_ptr + index;
+    size_t index = simple_hash_table_hash_key(self->capacity, key);
+    bucket *bucket = self->buckets + index;
     entry *entry = simple_hash_table_find_entry(bucket, key);
     if (entry == NULL)
     {
@@ -164,8 +187,8 @@ int *simple_hash_table_get(hash_table *self, char *key)
 
 void simple_hash_table_remove(hash_table *self, char *key)
 {
-    size_t index = simple_hash_table_hash_key(self->buckets, key);
-    bucket *bucket = self->buckets_ptr + index;
+    size_t index = simple_hash_table_hash_key(self->capacity, key);
+    bucket *bucket = self->buckets + index;
     entry *entry = simple_hash_table_remove_entry(bucket, key);
-    simple_hash_table_delete_entry(&entry);
+    simple_hash_table_free_entry(&entry);
 }
