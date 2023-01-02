@@ -4,6 +4,7 @@ project("C algorithms")
 
 include(cmake/functions.cmake)
 
+add_subdirectory(hello_world)
 add_subdirectory(array_list)
 add_subdirectory(linked_list)
 add_subdirectory(simple_hash_table)
