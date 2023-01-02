@@ -12,7 +12,6 @@ struct entry
 
 typedef struct bucket
 {
-    int size;
     entry *head;
     entry *tail;
 } bucket;
@@ -33,5 +32,7 @@ void simple_hash_table_put(hash_table *self, char *key, int data);
 int *simple_hash_table_get(hash_table *self, char *key);
 
 void simple_hash_table_remove(hash_table *self, char *key);
+
+void simple_hash_pretty_print(hash_table *self);
 
 #endif //_SIMPLE_HASH_TABLE_H
