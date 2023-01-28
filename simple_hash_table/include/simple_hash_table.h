@@ -1,38 +1,35 @@
 #ifndef _SIMPLE_HASH_TABLE_H
 #define _SIMPLE_HASH_TABLE_H
 
-typedef struct entry entry;
-
 struct entry
 {
     char *key;
     int *data;
-    entry *next;
+    struct entry *next;
 };
 
-typedef struct bucket
+struct bucket
 {
-    entry *head;
-    entry *tail;
-} bucket;
+    struct entry *entry;
+};
 
-typedef struct hash_table
+struct hash_table
 {
     int capacity;
     int entries;
-    bucket *buckets;
-} hash_table;
+    struct bucket *buckets;
+};
 
-hash_table *simple_hash_table_new(int capacity);
+struct hash_table *simple_hash_table_new(int capacity);
 
-void simple_hash_table_free(hash_table **self);
+void simple_hash_table_free(struct hash_table **self);
 
-void simple_hash_table_put(hash_table *self, char *key, int data);
+void simple_hash_table_put(struct hash_table *self, char *key, int data);
 
-int *simple_hash_table_get(hash_table *self, char *key);
+int *simple_hash_table_get(struct hash_table *self, char *key);
 
-void simple_hash_table_remove(hash_table *self, char *key);
+void simple_hash_table_remove(struct hash_table *self, char *key);
 
-void simple_hash_pretty_print(hash_table *self);
+void simple_hash_pretty_print(struct hash_table *self);
 
 #endif //_SIMPLE_HASH_TABLE_H

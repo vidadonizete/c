@@ -8,18 +8,18 @@
 #define THRESHOLD 0.75
 #define GROW_FACTOR 2
 
-hash_table *simple_hash_table_new(int capacity)
+struct hash_table *simple_hash_table_new(int capacity)
 {
-    hash_table *table = malloc(sizeof(hash_table));
+    struct hash_table *table = malloc(sizeof(struct hash_table));
 
     table->capacity = capacity;
     table->entries = 0;
-    table->buckets = calloc(capacity, sizeof(bucket));
+    table->buckets = calloc(capacity, sizeof(struct bucket));
 
     return table;
 }
 
-static void simple_hash_table_free_entry(entry **entry)
+static void simple_hash_table_free_entry(struct entry **entry)
 {
     if (entry == NULL || *entry == NULL)
     {
@@ -32,12 +32,12 @@ static void simple_hash_table_free_entry(entry **entry)
     *entry = NULL;
 }
 
-void simple_hash_table_free(hash_table **self)
+void simple_hash_table_free(struct hash_table **self)
 {
     for (int i = 0; i < (*self)->capacity; i++)
     {
-        bucket *bucket = (*self)->buckets + i;
-        entry *entry = bucket->head;
+        struct bucket *bucket = (*self)->buckets + i;
+        struct entry *entry = bucket->entry;
         while (entry)
         {
             struct entry *next = entry->next;
@@ -68,62 +68,33 @@ static size_t simple_hash_table_hash_key(int buckets, char *key)
     return hash_digest % buckets;
 }
 
-static entry *simple_hash_table_remove_entry(bucket *bucket, char *key)
+static struct entry *simple_hash_table_remove_entry(struct bucket *bucket, char *key)
 {
-    if (bucket->head == NULL)
-    {
-        assert(bucket->tail == NULL);
-        return NULL;
-    }
-
-    entry *before = NULL;
-    entry *entry = bucket->head;
-
+    struct entry *entry = bucket->entry;
+    struct entry *before = NULL;
     while (entry && strcmp(entry->key, key))
     {
         before = entry;
         entry = entry->next;
     }
-
-    if (!entry)
+    if (entry == NULL)
     {
         return NULL;
     }
-    else if (bucket->head == bucket->tail)
-    {
-        assert(bucket->head->next == NULL);
-        assert(bucket->tail->next == NULL);
-
-        bucket->head = NULL;
-        bucket->tail = NULL;
-    }
-    else if (bucket->head == entry)
-    {
-        bucket->head = entry->next;
-    }
-    else if (bucket->tail == entry)
-    {
-        assert(before);
-        assert(entry->next == NULL);
-
-        before->next = NULL;
-        bucket->tail = before;
-    }
-    else
+    if (before)
     {
         before->next = entry->next;
     }
-
+    else
+    {
+        bucket->entry = entry->next;
+    }
     return entry;
 }
 
-static entry *simple_hash_table_find_entry(bucket *bucket, char *key)
+static struct entry *simple_hash_table_find_entry(struct bucket *bucket, char *key)
 {
-    if (bucket->head == NULL)
-    {
-        return NULL;
-    }
-    entry *entry = bucket->head;
+    struct entry *entry = bucket->entry;
     while (entry && strcmp(entry->key, key))
     {
         entry = entry->next;
@@ -131,25 +102,15 @@ static entry *simple_hash_table_find_entry(bucket *bucket, char *key)
     return entry;
 }
 
-static void simple_hash_table_insert_entry(bucket *bucket, entry *entry)
+static void simple_hash_table_insert_entry(struct bucket *bucket, struct entry *entry)
 {
-    if (bucket->tail == NULL)
-    {
-        assert(bucket->head == NULL);
-        bucket->head = entry;
-        bucket->tail = entry;
-    }
-    else
-    {
-        assert(bucket->head);
-        bucket->tail->next = entry;
-        bucket->tail = entry;
-    }
+    entry->next = bucket->entry;
+    bucket->entry = entry;
 }
 
-static entry *simple_hash_table_create_entry(char *key, int data)
+static struct entry *simple_hash_table_create_entry(char *key, int data)
 {
-    entry *entry = malloc(sizeof(struct entry));
+    struct entry *entry = malloc(sizeof(struct entry));
 
     entry->key = malloc(strlen(key) * sizeof(char));
     entry->data = malloc(sizeof(int));
@@ -161,7 +122,7 @@ static entry *simple_hash_table_create_entry(char *key, int data)
     return entry;
 }
 
-static void simple_hash_table_check_health_and_expand(hash_table *self)
+static void simple_hash_table_check_health_and_expand(struct hash_table *self)
 {
     float load_factor = self->entries / (float)self->capacity;
     if (load_factor < THRESHOLD)
@@ -172,13 +133,13 @@ static void simple_hash_table_check_health_and_expand(hash_table *self)
     int old_capacity = self->capacity;
     int new_capacity = old_capacity * GROW_FACTOR;
 
-    bucket *old_buckets = self->buckets;
-    bucket *new_buckets = calloc(new_capacity, sizeof(bucket));
+    struct bucket *old_buckets = self->buckets;
+    struct bucket *new_buckets = calloc(new_capacity, sizeof(struct bucket));
 
     for (int i = 0; i < old_capacity; i++)
     {
-        bucket *old_bucket = old_buckets + i;
-        entry *entry = old_bucket->head;
+        struct bucket *old_bucket = old_buckets + i;
+        struct entry *entry = old_bucket->entry;
 
         while (entry)
         {
@@ -186,7 +147,7 @@ static void simple_hash_table_check_health_and_expand(hash_table *self)
             entry->next = NULL;
 
             size_t index = simple_hash_table_hash_key(new_capacity, entry->key);
-            bucket *new_bucket = new_buckets + index;
+            struct bucket *new_bucket = new_buckets + index;
 
             simple_hash_table_insert_entry(new_bucket, entry);
             entry = next;
@@ -199,51 +160,51 @@ static void simple_hash_table_check_health_and_expand(hash_table *self)
     free(old_buckets);
 }
 
-void simple_hash_table_put(hash_table *self, char *key, int data)
+void simple_hash_table_put(struct hash_table *self, char *key, int data)
 {
     simple_hash_table_check_health_and_expand(self);
 
     size_t index = simple_hash_table_hash_key(self->capacity, key);
-    bucket *bucket = self->buckets + index;
+    struct bucket *bucket = self->buckets + index;
 
     {
-        entry *entry = simple_hash_table_remove_entry(bucket, key);
+        struct entry *entry = simple_hash_table_remove_entry(bucket, key);
         self->entries += !entry;
         simple_hash_table_free_entry(&entry);
     }
 
     {
-        entry *entry = simple_hash_table_create_entry(key, data);
+        struct entry *entry = simple_hash_table_create_entry(key, data);
         simple_hash_table_insert_entry(bucket, entry);
     }
 }
 
-int *simple_hash_table_get(hash_table *self, char *key)
+int *simple_hash_table_get(struct hash_table *self, char *key)
 {
     size_t index = simple_hash_table_hash_key(self->capacity, key);
-    bucket *bucket = self->buckets + index;
+    struct bucket *bucket = self->buckets + index;
 
-    entry *entry = simple_hash_table_find_entry(bucket, key);
+    struct entry *entry = simple_hash_table_find_entry(bucket, key);
     return entry == NULL ? NULL : entry->data;
 }
 
-void simple_hash_table_remove(hash_table *self, char *key)
+void simple_hash_table_remove(struct hash_table *self, char *key)
 {
     size_t index = simple_hash_table_hash_key(self->capacity, key);
-    bucket *bucket = self->buckets + index;
+    struct bucket *bucket = self->buckets + index;
 
-    entry *entry = simple_hash_table_remove_entry(bucket, key);
+    struct entry *entry = simple_hash_table_remove_entry(bucket, key);
     self->entries -= !!entry;
     simple_hash_table_free_entry(&entry);
 }
 
-void simple_hash_pretty_print(hash_table *self)
+void simple_hash_pretty_print(struct hash_table *self)
 {
     for (int i = 0; i < self->capacity; i++)
     {
         printf("bucket: %d\n", i);
-        bucket *bucket = self->buckets + i;
-        entry *entry = bucket->head;
+        struct bucket *bucket = self->buckets + i;
+        struct entry *entry = bucket->entry;
         while (entry)
         {
             printf("\tentry: %s %d\n", entry->key, *entry->data);
