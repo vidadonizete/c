@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24.2)
 
-project("C algorithms")
+project("C algorithms" LANGUAGES C CXX)
 
 include(cmake/functions.cmake)
 

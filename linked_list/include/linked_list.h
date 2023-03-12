@@ -1,30 +1,27 @@
 #ifndef _LINKED_LIST_H
 #define _LINKED_LIST_H
 
-typedef struct linked_node linked_node;
+#include <stdbool.h>
 
 struct linked_node
 {
     int data;
-    linked_node *next;
+    struct linked_node *next;
 };
 
-typedef struct linked_list
+struct linked_list
 {
-    int length;
-    linked_node *head;
-} linked_list;
+    struct linked_node *head;
+};
 
-linked_list *linked_list_new();
+struct linked_list *linked_list_new();
 
-void linked_list_free(linked_list **self);
+void linked_list_free(struct linked_list **self);
 
-void linked_list_push(linked_list *self, int data);
+void linked_list_push(struct linked_list *self, int data);
 
-int linked_list_pop(linked_list *self);
+int linked_list_pop(struct linked_list *self);
 
-int linked_list_get(linked_list *self, int index);
-
-int linked_list_remove(linked_list *self, int index);
+bool linked_list_is_empty(struct linked_list *self);
 
 #endif //_LINKED_LIST_H
